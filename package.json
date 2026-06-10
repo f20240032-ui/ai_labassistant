@@ -1,0 +1,13 @@
+{
+  "name": "ai-lab-assistant-platform",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Monorepo for a localhost AI Lab Assistant platform.",
+  "scripts": {
+    "install:all": "npm install --prefix services/core-backend && npm install --prefix services/student-ui && npm install --prefix services/report-processor",
+    "dev": "concurrently -n ai-core,core-backend,student-ui,report-processor -c blue,green,magenta,cyan \"npm run dev --prefix services/ai-core\" \"npm run dev --prefix services/core-backend\" \"npm run dev --prefix services/student-ui\" \"npm run dev --prefix services/report-processor\""
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
