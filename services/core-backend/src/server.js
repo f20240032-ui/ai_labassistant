@@ -30,12 +30,16 @@ app.post("/upload/code", upload.single("file"), async (req, res, next) => {
     const directCode = req.body.code;
     const fileCode = req.file?.buffer.toString("utf8");
     const code = directCode || fileCode;
-
     if (!language || !code) {
       return res.status(400).json({ error: "language and code or file are required" });
     }
-
-    const { data } = await axios.post(`${AI_CORE_URL}/analyze/code`, { language, code });
+    const { data } = await axios.post(`${AI_CORE_URL}/analyze/code`, {
+      language,
+      code,
+      response_language: req.body.response_language || "English",
+      provider: req.body.provider || "gemini",
+      api_key: req.body.api_key || null,
+    });
     return res.json(data);
   } catch (error) {
     return next(error);
@@ -47,9 +51,13 @@ app.post("/upload/circuit", upload.single("image"), async (req, res, next) => {
     if (!req.file) {
       return res.status(400).json({ error: "image file is required" });
     }
-
     const image = req.file.buffer.toString("base64");
-    const { data } = await axios.post(`${AI_CORE_URL}/analyze/circuit`, { image });
+    const { data } = await axios.post(`${AI_CORE_URL}/analyze/circuit`, {
+      image,
+      response_language: req.body.response_language || "English",
+      provider: req.body.provider || "gemini",
+      api_key: req.body.api_key || null,
+    });
     return res.json(data);
   } catch (error) {
     return next(error);
