@@ -180,36 +180,39 @@ h1 {
   backdrop-filter: blur(22px);
   background: var(--pill-bg);
   border: 1px solid var(--pill-border);
-  border-radius: 8px;
+  border-radius: 50px;
   box-shadow: 0 24px 70px rgba(0, 0, 0, 0.18);
-  display: grid;
-  gap: 6px;
-  grid-template-columns: repeat(4, 1fr);
-  margin-bottom: 18px;
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  margin: 0 auto 18px auto;
+  max-width: 600px;
   padding: 6px;
+  position: relative;
 }
-
 .tab {
   background: transparent;
   border: 0;
-  border-radius: 6px;
+  border-radius: 50px;
   color: var(--tab-text);
   cursor: pointer;
   font-weight: 700;
   min-height: 42px;
-  transition: background 160ms ease, color 160ms ease, transform 160ms ease;
+  padding: 0 24px;
+  transition: background 300ms ease, color 300ms ease, transform 300ms ease;
+  position: relative;
+  z-index: 1;
 }
-
 .tab:hover {
   background: rgba(255, 255, 255, 0.12);
   color: #f5ffff;
+  transform: scale(1.05);
 }
-
 .tab.active {
-  background: linear-gradient(135deg, var(--accent-a) 0%, var(--accent-b) 100%);
-  box-shadow: 0 12px 32px rgba(83, 255, 231, 0.28);
-  color: var(--button-text);
-  font-weight: 700;
+  background: linear-gradient(135deg, #0de2c4, #0891b2);
+  color: #000;
+  transform: scale(1.05);
+  box-shadow: 0 4px 15px rgba(13, 226, 196, 0.4);
 }
 
 .tool-grid {
