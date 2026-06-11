@@ -7,7 +7,7 @@ import "./styles.css";
 const CORE_BACKEND_URL = import.meta.env.VITE_CORE_BACKEND_URL || "http://localhost:3000";
 const REPORT_PROCESSOR_URL = import.meta.env.VITE_REPORT_PROCESSOR_URL || "http://localhost:3002";
 
-const tabs = ["Debug Code", "Analyse Circuit", "Lab Report", "Viva Prep"];
+const tabs = ["Debug Code", "Analyse Circuit", "Lab Report"];
 const SUPPORTED_LANGUAGES = ["Python", "MATLAB", "Arduino", "C", "C++", "JavaScript", "Java"];
 
 function App() {
@@ -52,7 +52,6 @@ function App() {
       {activeTab === "Debug Code" && <DebugCode />}
       {activeTab === "Analyse Circuit" && <AnalyseCircuit />}
       {activeTab === "Lab Report" && <LabReport />}
-      {activeTab === "Viva Prep" && <VivaPrepTool />}
     </main>
   );
 }
@@ -443,112 +442,6 @@ function LabReport() {
   );
 }
 
-function VivaPrepTool() {
-  const [topic, setTopic] = useState("");
-  const [difficulty, setDifficulty] = useState("medium");
-  const [result, setResult] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const resultsRef = useRef(null);
-
-  async function submit(event) {
-    event.preventDefault();
-    setLoading(true);
-    setError("");
-    setResult(null);
-
-    try {
-      const response = await fetch(`${CORE_BACKEND_URL}/analyze/viva`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ topic, difficulty }),
-      });
-      const data = await readJson(response);
-      setResult(data);
-    } catch (err) {
-      setError(formatErrorMessage(err));
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  const handleCopy = (text) => {
-    navigator.clipboard.writeText(text);
-    alert("Copied to clipboard!");
-  };
-
-  const handleExport = async (format) => {
-    if (!result) return;
-
-    if (format === "text") {
-      const text = generateVivaTextReport(result);
-      const blob = new Blob([text], { type: "text/plain" });
-      downloadFile(blob, "viva-prep.txt");
-    } else if (format === "pdf") {
-      await exportToPDF(resultsRef, "viva-prep.pdf");
-    }
-  };
-
-  return (
-    <section className="tool-grid">
-      <form className="panel" onSubmit={submit}>
-        <label>
-          Topic / Experiment Name
-          <input
-            type="text"
-            value={topic}
-            onChange={(event) => setTopic(event.target.value)}
-            placeholder="e.g., Diode Characteristics"
-          />
-        </label>
-        <label>
-          Question Difficulty
-          <select value={difficulty} onChange={(event) => setDifficulty(event.target.value)}>
-            <option value="easy">Easy</option>
-            <option value="medium">Medium</option>
-            <option value="hard">Hard</option>
-          </select>
-        </label>
-        <button disabled={loading || !topic.trim()} type="submit">
-          {loading ? "Generating..." : "Generate Questions"}
-        </button>
-        {error && <p className="error">{error}</p>}
-      </form>
-
-      <section className="panel results" ref={resultsRef}>
-        <div className="results-toolbar">
-          <h2>Viva Questions</h2>
-          {result && (
-            <div className="export-buttons">
-              <button className="export-btn" onClick={() => handleExport("text")}>
-                📄 Text
-              </button>
-              <button className="export-btn" onClick={() => handleExport("pdf")}>
-                📕 PDF
-              </button>
-            </div>
-          )}
-        </div>
-        {!result && <p className="empty">Generated viva questions appear here.</p>}
-        {result?.questions?.map((item, index) => (
-          <details className="viva-item" key={`${item.q}-${index}`}>
-            <summary>
-              <span className={`difficulty-badge ${item.difficulty?.toLowerCase() || 'medium'}`}>
-                {item.difficulty || difficulty.charAt(0).toUpperCase() + difficulty.slice(1)}
-              </span>
-              {item.q}
-            </summary>
-            <p>{item.a}</p>
-            <button className="copy-btn" onClick={() => handleCopy(item.a)} title="Copy Answer">
-              📋
-            </button>
-          </details>
-        ))}
-      </section>
-    </section>
-  );
-}
-
 async function readJson(response) {
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
@@ -635,19 +528,6 @@ function generateReportTextFile(result) {
     text += "\n=== VIVA QUESTIONS ===\n";
     result.viva_questions.forEach((item, idx) => {
       text += `${idx + 1}. Q: ${item.q}\n   A: ${item.a}\n\n`;
-    });
-  }
-
-  return text;
-}
-
-function generateVivaTextReport(result) {
-  let text = "=== VIVA PREPARATION GUIDE ===\n\n";
-
-  if (result.questions?.length) {
-    result.questions.forEach((item, idx) => {
-      text += `${idx + 1}. [${item.difficulty || "Medium"}] ${item.q}\n`;
-      text += `   Answer: ${item.a}\n\n`;
     });
   }
 
