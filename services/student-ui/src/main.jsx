@@ -11,15 +11,9 @@ const tabs = ["Debug Code", "Analyse Circuit", "Lab Report"];
 const SUPPORTED_LANGUAGES = ["Python", "MATLAB", "Arduino", "C", "C++", "JavaScript", "Java"];
 const RESPONSE_LANGUAGES = [
   { label: "English", value: "English" },
-  { label: "తెలుగు (Telugu)", value: "Telugu" },
   { label: "हिंदी (Hindi)", value: "Hindi" },
-  { label: "தமிழ் (Tamil)", value: "Tamil" },
-  { label: "ಕನ್ನಡ (Kannada)", value: "Kannada" },
-  { label: "മലയാളം (Malayalam)", value: "Malayalam" },
-  { label: "मराठी (Marathi)", value: "Marathi" },
-  { label: "বাংলা (Bengali)", value: "Bengali" },
+  { label: "తెలుగు (Telugu)", value: "Telugu" },
 ];
-
 function App() {
   const [activeTab, setActiveTab] = useState(tabs[0]);
   const [theme, setTheme] = useState("dark");
