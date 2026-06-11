@@ -19,7 +19,7 @@ PORT = int(os.getenv("PORT", "5001"))
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
 
-app = FastAPI(title="AI Layer Core", version="1.0.0")
+app = FastAPI(title="AI Layer Core", version="2.0.0")
 
 
 class CodeAnalyzeRequest(BaseModel):
@@ -33,6 +33,11 @@ class CircuitAnalyzeRequest(BaseModel):
 
 class ReportAnalyzeRequest(BaseModel):
     text: str = Field(..., min_length=1)
+
+
+class VivaRequest(BaseModel):
+    topic: str = Field(..., min_length=1)
+    difficulty: str = Field(default="medium")
 
 
 def extract_json(text: str) -> Dict[str, Any]:
@@ -84,6 +89,11 @@ def call_gemini(prompt: str, image_b64: str | None = None) -> Dict[str, Any]:
             )
     except Exception as exc:
         logger.exception("Gemini request failed")
+        error_msg = str(exc).lower()
+        if "quota" in error_msg:
+            raise HTTPException(status_code=429, detail="Quota exceeded. Try again later.") from exc
+        elif "401" in error_msg or "unauthorized" in error_msg:
+            raise HTTPException(status_code=401, detail="Authentication failed. Check API key.") from exc
         raise HTTPException(status_code=502, detail="Gemini request failed") from exc
 
     return extract_json(response.text or "{}")
@@ -103,9 +113,11 @@ def analyze_code(payload: CodeAnalyzeRequest) -> Dict[str, Any]:
     prompt = f"""
 You are an AI Lab Assistant performing static analysis only. Do not execute or simulate code.
 Analyze this {payload.language} lab code for bugs, corrections, and learning explanations.
+Also provide corrected code snippets with fixes.
+Label each bug with severity level (critical/warning/info).
 Return only JSON with this exact shape:
 {{
-  "bugs": [{{"title": "string", "line": "string or null", "severity": "low|medium|high", "description": "string"}}],
+  "bugs": [{{"title": "string", "line": "string or null", "severity": "critical|warning|info", "description": "string"}}],
   "fixes": [{{"title": "string", "code": "string", "description": "string"}}],
   "explanations": ["string"]
 }}
@@ -151,7 +163,7 @@ Return only JSON with this exact shape:
     "results": "string",
     "conclusion": "string"
   }},
-  "viva_questions": [{{"q": "string", "a": "string"}}]
+  "viva_questions": [{{"q": "string", "a": "string", "difficulty": "easy|medium|hard"}}]
 }}
 
 Extracted text:
@@ -170,6 +182,28 @@ Extracted text:
         },
         "viva_questions": ensure_list(data.get("viva_questions")),
     }
+
+
+@app.post("/analyze/viva")
+def analyze_viva(payload: VivaRequest) -> Dict[str, Any]:
+    prompt = f"""
+You are an AI Lab Assistant generating targeted viva questions for lab preparation.
+Generate 8-10 mock viva questions on the topic: {payload.topic}
+Difficulty level: {payload.difficulty}
+Label each question with difficulty: easy/medium/hard
+
+Return only JSON with this exact shape:
+{{
+  "questions": [
+    {{"q": "string", "a": "string", "difficulty": "easy|medium|hard"}}
+  ]
+}}
+
+Include theory questions, application-based questions, numerical problems, and troubleshooting scenarios.
+Keep answers concise but comprehensive.
+"""
+    data = call_gemini(prompt)
+    return {"questions": ensure_list(data.get("questions"))}
 
 
 if __name__ == "__main__":
