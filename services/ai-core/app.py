@@ -1,13 +1,15 @@
 import json
 import logging
 import os
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import google.generativeai as genai
 import uvicorn
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
+from groq import Groq
 
 load_dotenv()
 
@@ -18,21 +20,31 @@ logger = logging.getLogger("ai-core")
 PORT = int(os.getenv("PORT", "5001"))
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
+GROQ_MODEL = "llama-3.3-70b-versatile"
 
-app = FastAPI(title="AI Layer Core", version="1.0.0")
+app = FastAPI(title="AI Layer Core", version="2.0.0")
 
 
 class CodeAnalyzeRequest(BaseModel):
     language: str = Field(..., min_length=1)
     code: str = Field(..., min_length=1)
+    response_language: str = Field(default="English")
+    provider: str = Field(default="gemini")
+    api_key: Optional[str] = Field(default=None)
 
 
 class CircuitAnalyzeRequest(BaseModel):
     image: str = Field(..., min_length=1, description="Base64 encoded circuit image")
+    response_language: str = Field(default="English")
+    provider: str = Field(default="gemini")
+    api_key: Optional[str] = Field(default=None)
 
 
 class ReportAnalyzeRequest(BaseModel):
     text: str = Field(..., min_length=1)
+    response_language: str = Field(default="English")
+    provider: str = Field(default="gemini")
+    api_key: Optional[str] = Field(default=None)
 
 
 def extract_json(text: str) -> Dict[str, Any]:
@@ -53,32 +65,44 @@ def extract_json(text: str) -> Dict[str, Any]:
     try:
         return json.loads(cleaned)
     except json.JSONDecodeError as exc:
-        logger.warning("Gemini returned non-JSON response: %s", text[:500])
+        logger.warning("Non-JSON response: %s", text[:500])
         raise HTTPException(status_code=502, detail="AI response was not valid JSON") from exc
 
 
-def model() -> genai.GenerativeModel:
-    if not GEMINI_API_KEY:
-        raise HTTPException(status_code=500, detail="GEMINI_API_KEY is not configured")
-    genai.configure(api_key=GEMINI_API_KEY)
-    return genai.GenerativeModel(GEMINI_MODEL)
-
-
-def call_gemini(prompt: str, image_b64: str | None = None) -> Dict[str, Any]:
+def call_groq(prompt: str, api_key: str) -> Dict[str, Any]:
     try:
+        client = Groq(api_key=api_key)
+        response = client.chat.completions.create(
+            model=GROQ_MODEL,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.3,
+        )
+        text = response.choices[0].message.content or "{}"
+        return extract_json(text)
+    except Exception as exc:
+        logger.exception("Groq request failed")
+        error_msg = str(exc).lower()
+        if "quota" in error_msg or "rate" in error_msg:
+            raise HTTPException(status_code=429, detail="Groq quota exceeded. Try again later.") from exc
+        elif "401" in error_msg or "unauthorized" in error_msg or "invalid" in error_msg:
+            raise HTTPException(status_code=401, detail="Invalid Groq API key.") from exc
+        raise HTTPException(status_code=502, detail="Groq request failed") from exc
+
+
+def call_gemini(prompt: str, image_b64: str | None = None, api_key: str | None = None) -> Dict[str, Any]:
+    key = api_key or GEMINI_API_KEY
+    if not key:
+        raise HTTPException(status_code=500, detail="No Gemini API key provided.")
+    try:
+        genai.configure(api_key=key)
+        gemini_model = genai.GenerativeModel(GEMINI_MODEL)
         if image_b64:
-            response = model().generate_content(
-                [
-                    prompt,
-                    {
-                        "mime_type": "image/png",
-                        "data": image_b64,
-                    },
-                ],
+            response = gemini_model.generate_content(
+                [prompt, {"mime_type": "image/png", "data": image_b64}],
                 generation_config={"response_mime_type": "application/json"},
             )
         else:
-            response = model().generate_content(
+            response = gemini_model.generate_content(
                 prompt,
                 generation_config={"response_mime_type": "application/json"},
             )
@@ -86,12 +110,22 @@ def call_gemini(prompt: str, image_b64: str | None = None) -> Dict[str, Any]:
         logger.exception("Gemini request failed")
         error_msg = str(exc).lower()
         if "quota" in error_msg:
-            raise HTTPException(status_code=429, detail="Quota exceeded. Try again later.") from exc
+            raise HTTPException(status_code=429, detail="Gemini quota exceeded. Try again later.") from exc
         elif "401" in error_msg or "unauthorized" in error_msg:
-            raise HTTPException(status_code=401, detail="Authentication failed. Check API key.") from exc
+            raise HTTPException(status_code=401, detail="Invalid Gemini API key.") from exc
         raise HTTPException(status_code=502, detail="Gemini request failed") from exc
-
     return extract_json(response.text or "{}")
+
+
+def call_ai(prompt: str, provider: str, api_key: Optional[str], image_b64: str | None = None) -> Dict[str, Any]:
+    if provider == "groq":
+        if not api_key:
+            raise HTTPException(status_code=400, detail="Groq API key required. Get one free at console.groq.com")
+        if image_b64:
+            raise HTTPException(status_code=400, detail="Groq does not support image input. Use Gemini for circuit analysis.")
+        return call_groq(prompt, api_key)
+    else:
+        return call_gemini(prompt, image_b64, api_key)
 
 
 def ensure_list(value: Any) -> List[Any]:
@@ -109,6 +143,7 @@ def analyze_code(payload: CodeAnalyzeRequest) -> Dict[str, Any]:
 You are an AI Lab Assistant performing static analysis only. Do not execute or simulate code.
 Analyze this {payload.language} lab code for bugs, corrections, and learning explanations.
 Also provide corrected code snippets with fixes.
+Respond entirely in {payload.response_language}.
 Return only JSON with this exact shape:
 {{
   "bugs": [{{"title": "string", "line": "string or null", "severity": "low|medium|high", "description": "string"}}],
@@ -121,7 +156,7 @@ Code:
 {payload.code}
 ```
 """
-    data = call_gemini(prompt)
+    data = call_ai(prompt, payload.provider, payload.api_key)
     return {
         "bugs": ensure_list(data.get("bugs")),
         "fixes": ensure_list(data.get("fixes")),
@@ -131,15 +166,16 @@ Code:
 
 @app.post("/analyze/circuit")
 def analyze_circuit(payload: CircuitAnalyzeRequest) -> Dict[str, Any]:
-    prompt = """
+    prompt = f"""
 You are an AI Lab Assistant identifying visible circuit components from an uploaded lab image.
+Respond entirely in {payload.response_language}.
 Return only JSON with this exact shape:
-{
-  "components": [{"name": "string", "description": "string"}]
-}
+{{
+  "components": [{{"name": "string", "description": "string"}}]
+}}
 Keep descriptions concise and educational.
 """
-    data = call_gemini(prompt, payload.image)
+    data = call_ai(prompt, payload.provider, payload.api_key, payload.image)
     return {"components": ensure_list(data.get("components"))}
 
 
@@ -147,6 +183,7 @@ Keep descriptions concise and educational.
 def analyze_report(payload: ReportAnalyzeRequest) -> Dict[str, Any]:
     prompt = f"""
 You are an AI Lab Assistant converting extracted lab-report text into a clean report template and viva prep.
+Respond entirely in {payload.response_language}.
 Return only JSON with this exact shape:
 {{
   "template": {{
@@ -163,7 +200,7 @@ Return only JSON with this exact shape:
 Extracted text:
 {payload.text}
 """
-    data = call_gemini(prompt)
+    data = call_ai(prompt, payload.provider, payload.api_key)
     template = data.get("template") if isinstance(data.get("template"), dict) else {}
     return {
         "template": {
