@@ -1,5 +1,5 @@
-# 🧪 AI Lab Assistant - v2.0.0
-### An AI-powered academic platform designed to help engineering students understand experiments, debug code, analyze circuits, prepare for vivas, and generate comprehensive lab reports.
+# 🧪 AI Lab Assistant
+### An AI-powered academic platform designed to help engineering students understand experiments, debug code, analyze circuits, and generate comprehensive lab reports.
 
 ---
 
@@ -7,11 +7,10 @@
 Engineering students frequently face friction when executing and documenting their laboratory coursework. Common hurdles include:
 * **Conceptual Gaps:** Difficulty understanding complex laboratory manuals and experiment objectives.
 * **Debugging Roadblocks:** Spending hours tracking down logical errors in **MATLAB, Python, C, C++, Arduino, JavaScript, and Java** code.
-* **Viva Vulnerability:** Lack of targeted preparation resources for spontaneous oral examinations.
 * **Documentation Fatigue:** Structuring, compiling, and finalizing repetitive, detailed lab reports.
 * **Resource Fragmentation:** Constantly switching between textbooks, hardware data sheets, stack exchange forums, and standard chatbots.
 
-**AI Lab Assistant** solves this by unifying code debugging, circuit schematic analysis, report compilation, and exam preparation into a single intelligent portal.
+**AI Lab Assistant** solves this by unifying code debugging, circuit schematic analysis, and report compilation into a single intelligent portal.
 
 ---
 
@@ -23,21 +22,21 @@ Students can directly upload raw source files, reference documentation, or struc
 * [x] Arduino Sketches & C/C++/Java Source Files
 * [x] Circuit Diagrams, Schematics & Hardware Screenshots
 
-The application leverages advanced multimodal AI to parse inputs, locate syntax or component faults, suggest optimizations, generate tailored viva questions, and output clean report structures.
+The application leverages advanced multimodal AI to parse inputs, locate syntax or component faults, suggest optimizations, and output clean report structures.
 
 ---
 
-## ✨ Core Features (v2.0.0 Enhancements)
+## ✨ Core Features
 
 ### 🔍 Code Analysis & Optimization
 Upload source files written in **MATLAB, Python, C, C++, Java, Arduino, or JavaScript**. The engine instantly provides:
-* **Automated compile-time and logical error detection** with severity labels (Critical/Warning/Info)
+* Automated compile-time and logical error detection
 * Line-by-line runtime logic explanations
-* **Drop-in script bug fixes** with before/after code comparison
-* **Syntax-highlighted code display** for better readability
-* Readability refactoring and execution performance tips
+* **Drop-in script bug fixes** with before/after comparison
+* **Syntax-highlighted code display**
 * **Copy-to-clipboard** buttons on all outputs
 * **Export results as PDF or TXT** files
+* Readability refactoring and execution performance tips
 
 ### ⚡ Multimodal Circuit Analysis
 Upload schematic images or circuit wireframes to get:
@@ -47,15 +46,6 @@ Upload schematic images or circuit wireframes to get:
 * System applications and embedded hardware interface steps
 * **Copy components** and export analysis as PDF/Text
 
-### 🎤 Enhanced Viva Preparation
-Prepares students for laboratory vivas with customized mock question sets including:
-* **Difficulty-labeled questions**: Easy, Medium, Hard
-* **Theory Questions:** Evaluating fundamental underlying laws
-* **Application-Based Questions:** Real-world usage scenarios
-* **Numerical Layouts:** Quick variable calculation challenges
-* **Troubleshooting:** Identifying simulated system failure states
-* **Export viva prep** as PDF or text download
-
 ### 📝 Automated Lab Report Generation
 Compiles structured, academic-ready laboratory reports instantly containing:
 1. **Aim & Objectives**
@@ -64,18 +54,16 @@ Compiles structured, academic-ready laboratory reports instantly containing:
 4. **Data Observations Tables**
 5. **Calculated Results & Plotted Curves**
 6. **Final Conclusion**
-7. **Auto-generated Viva Q&A** with difficulty labels
 
-### 📚 Premium Features in v2.0.0
+### 📚 Premium Features
 ✅ **Copy to clipboard button** on all outputs  
 ✅ **Syntax-highlighted code display** using highlight.js  
 ✅ **Export results as PDF/text** download option  
 ✅ **7+ programming languages** supported (Python, MATLAB, C, C++, Java, Arduino, JavaScript)  
 ✅ **Better error messages** ("Quota exceeded, try again later" instead of raw errors)  
 ✅ **Auto-corrected code** — corrected code provided in same analysis  
-✅ **Severity labels** on debug issues — critical/warning/info  
-✅ **Viva question difficulty** levels — easy/medium/hard  
-✅ **Sliding dark/light mode button** for smooth theme switching
+✅ **Sliding dark/light mode button** for smooth theme switching  
+✅ **Responsive design** for desktop, tablet, and mobile
 
 ---
 
@@ -137,29 +125,8 @@ ai_labassistant/
 │   ├── student-ui/           # React + Vite frontend
 │   └── report-processor/     # Report compilation service
 ├── package.json              # Monorepo configuration
-├── README.md                 # This file
-├── AGENTS.md                 # AI Agent Documentation
-└── SKILLS.md                 # Feature Skills Documentation
+└── README.md                 # This file
 ```
-
----
-
-## 📚 Documentation
-
-### [AGENTS.md](./AGENTS.md)
-Details about the AI agents powering different analysis modules:
-- Code Debugger Agent
-- Circuit Analyzer Agent
-- Report Generator Agent
-- Viva Prep Agent
-
-### [SKILLS.md](./SKILLS.md)
-Comprehensive guide to all available features:
-- Code Analysis with Severity Labels
-- Circuit Component Recognition
-- Lab Report Generation
-- Viva Question Generation with Difficulty Levels
-- Export & Download Features
 
 ---
 
@@ -238,24 +205,15 @@ Content-Type: multipart/form-data
 }
 ```
 
-### Viva Question Generation
-```
-POST /analyze/viva
-Content-Type: application/json
-{
-  "topic": "experiment name",
-  "difficulty": "easy|medium|hard"
-}
-```
-
 ---
 
 ## 🎨 UI Features
 
 ### Theme Toggle
-- Smooth sliding button for Dark/Light mode switching
-- Persistent theme preference
-- Responsive design for all screen sizes
+- 🌙 Dark mode - Easy on eyes, better for coding
+- ☀️ Light mode - Better print quality, easier reading
+- Smooth transition animation
+- Persistent preference (localStorage)
 
 ### Export Options
 - **📄 Text Export** - Download results as `.txt` file
@@ -356,5 +314,5 @@ For issues, feature requests, or questions:
 ---
 
 **Last Updated**: June 11, 2026  
-**Version**: 2.0.0  
+**Version**: 1.0.0  
 **Status**: Active Development
