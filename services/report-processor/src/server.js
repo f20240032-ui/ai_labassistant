@@ -48,7 +48,12 @@ app.post("/process/report", upload.single("file"), async (req, res, next) => {
       });
     }
 
-    const { data } = await axios.post(`${AI_CORE_URL}/analyze/report`, { text });
+    const { data } = await axios.post(`${AI_CORE_URL}/analyze/report`, {
+  text,
+  response_language: req.body.response_language || "English",
+  provider: req.body.provider || "gemini",
+  api_key: req.body.api_key || null,
+});
     return res.json(data);
   } catch (error) {
     return next(error);
