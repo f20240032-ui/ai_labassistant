@@ -183,7 +183,7 @@ Keep descriptions concise and educational.
 def analyze_report(payload: ReportAnalyzeRequest) -> Dict[str, Any]:
     prompt = f"""
 You are an AI Lab Assistant converting extracted lab-report text into a clean report template and viva prep.
-Respond entirely in {payload.response_language}.
+CRITICAL: Every single value in the JSON response (all template fields and all viva question/answer text) MUST be written entirely in {payload.response_language}. Do not use English unless {payload.response_language} is "English".
 Return only JSON with this exact shape:
 {{
   "template": {{
